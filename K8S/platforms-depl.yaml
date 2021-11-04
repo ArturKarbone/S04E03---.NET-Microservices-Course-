@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: platformservice
-          image: binarythistle/platformservice:latest
+          image: arturkarbone/platformservice:latest
           env:
            - name: ASPNETCORE_ENVIRONMENT
              value: Production
