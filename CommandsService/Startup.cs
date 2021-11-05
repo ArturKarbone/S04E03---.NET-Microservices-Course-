@@ -21,23 +21,33 @@ namespace CommandsService
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
         }
 
         public IConfiguration Configuration { get; }
+        private readonly IWebHostEnvironment _env;
 
-        
+
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("InMen"));
+            if (_env.IsProduction())
+            {
+                services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("CommandsConn")));
+            }
+            else
+            {
+                services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("InMen"));
+            }
+
             services.AddScoped<ICommandRepo, CommandRepo>();
             services.AddControllers();
 
             services.AddHostedService<MessageBusSubscriber>();
 
-            services.AddSingleton<IEventProcessor, EventProcessor>(); 
+            services.AddSingleton<IEventProcessor, EventProcessor>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
             services.AddScoped<IPlatformDataClient, PlatformDataClient>();
             services.AddSwaggerGen(c =>
@@ -46,7 +56,7 @@ namespace CommandsService
             });
         }
 
-       
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -67,7 +77,7 @@ namespace CommandsService
                 endpoints.MapControllers();
             });
 
-            PrepDb.PrepPopulation(app);
+            PrepDb.PrepPopulation(app, env.IsProduction());
         }
     }
 }
